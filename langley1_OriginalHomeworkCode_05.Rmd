@@ -1,0 +1,104 @@
+---
+title: "langley1_OriginalHWCode_05"
+output: html_document
+---
+***
+
+### Homework 5: Boots for Days!
+
+***
+
+Loading in my Kalimar and Cooper dataset
+```{r}
+library(curl)
+df <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN597_Fall19/KamilarAndCooperData.csv")
+df <- read.csv(df, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(df)
+names(df) #double checking that HomeRange_km2 is a column 
+
+
+KC <- na.omit(df) #removing NAs from the dataset so that I can use the Boot() function down below
+head(KC)
+KC$HomeRange_km2
+
+
+```
+
+## Question 1: Run a linear regression looking at log(HomeRange_km2) in relation to log(Body_mass_female_mean) and report your β coeffiecients (slope and intercept)
+
+```{r}
+#assigning variables to the data I want to look at
+log_hr <- KC$HomeRange_km2
+log_bmfm <- KC$Body_mass_female_mean
+
+log_hr
+log_bmfm
+str(log_hr)
+
+lm1<- lm(data= KC, log_hr ~ log_bmfm) #doing the linear regression
+lm1
+summary(lm1)
+
+#Intercept = 1.631
+#Slope = 0.00009785
+```
+
+## Question 2: Then, use bootstrapping to sample from your data 1000 times with replacement, each time fitting the same model and calculating the same coefficients. This generates a sampling distribution for each β coefficient.
+
+```{r}
+install.packages("car") #The Boot() funciton is in package "car"
+library(car)
+
+set.seed(100)
+bootstrap <- Boot(lm1, f=coef, R=1000) #f= coef so that the same coefficients are used every time
+summary(bootstrap)
+```
+
+## Question 2a: Estimate the standard error for each of your β coefficients as the standard deviation of the sampling distribution from your bootstrap and determine the 95% CI for each of your β coefficients based on the appropriate quantiles from your sampling distribution.
+
+```{r}
+#The standard error for the coefficients as the standard deviation of the sampling distribution is given to you in the summary of my bootstrap object
+
+#SE of HomeRange_km2 (intercept) = 1.1317
+#SE of body_mass_female_mean = 0.000136
+
+CI <- confint(bootstrap, level = .95, type = "norm")
+CI
+```
+
+## Question 2b: How does the former compare to the SE estimated from your entire dataset using the formula for standard error implemented in lm()?
+
+```{r}
+summary(lm1)
+
+#From original linear model
+#SE of Log(HomeRange_km2) (intercept) = 1.088
+#SE of Log(body_mass_female_mean) = 0.00005716
+
+#From Bootstrapping: 
+#SE of Log(HomeRange_km2) (intercept) = 1.1317
+#SE of Log(body_mass_female_mean) = 0.000136
+
+#The standard errors from the bootstrapping are larger than the standard errors from the original linear regression 
+```
+
+## Question 2c: How does the latter compare to the 95% CI estimated from your entire dataset?
+
+```{r}
+#From Bootstrapping:
+#               2.5 %               97.5 %
+#log_hr   	-0.2218478154	     4.2144735734		
+#log_bmfm	  -0.0002180483	     0.0003150889
+
+
+#From original linear model 
+CI_lm<- confint(lm1, level = 0.95, type = "norm")
+CI_lm
+
+#                 2.5 %            97.5 %
+#log_hr     -6.148631e-01      3.8776092174
+#log_bmfm   -2.011861e-05      0.0002158257
+
+#The CIs from the bootstrapping are bigger in the upper limit and smaller in the lower limit that the CIs from the original lm.  
+```
+
