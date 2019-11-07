@@ -8,6 +8,13 @@ output: html_document
 
 ***
 
+## My Challenges:
+
+1. I had some issues at first with my Boot() function because it was saying that there were NA's. I tried including na.omit() right in my Boot() line but that didn't work, then I tried removing the NA's from my lm() but that also didn't work. Lastly, I had to just take the NA's out right from the original Kamilar and Cooper dataset. 
+2. Am I doing it right when I put homerange_km2 first in my lm()? I wasn't sure if it would go homerange ~ body mass or body mass ~ homerange. 
+3. Understanding the differences in the CIs between the original lm and my bootstrap. I would think the CI for the bootstrap should be smaller (more narrow) since you have so many more samples and not just your original one. However, that doesn't seem to be the case with mine. 
+
+
 Loading in my Kalimar and Cooper dataset
 ```{r}
 library(curl)
@@ -20,8 +27,6 @@ names(df) #double checking that HomeRange_km2 is a column
 KC <- na.omit(df) #removing NAs from the dataset so that I can use the Boot() function down below
 head(KC)
 KC$HomeRange_km2
-
-
 ```
 
 ## Question 1: Run a linear regression looking at log(HomeRange_km2) in relation to log(Body_mass_female_mean) and report your β coeffiecients (slope and intercept)
@@ -45,6 +50,8 @@ summary(lm1)
 
 ## Question 2: Then, use bootstrapping to sample from your data 1000 times with replacement, each time fitting the same model and calculating the same coefficients. This generates a sampling distribution for each β coefficient.
 
+# I got all of my Boot() information from [this helpful  website](https://socialsciences.mcmaster.ca/jfox/Books/Companion/appendices/Appendix-Bootstrapping.pdf)
+
 ```{r}
 install.packages("car") #The Boot() funciton is in package "car"
 library(car)
@@ -52,6 +59,7 @@ library(car)
 set.seed(100)
 bootstrap <- Boot(lm1, f=coef, R=1000) #f= coef so that the same coefficients are used every time
 summary(bootstrap)
+hist(bootstrap) #visualizing my bootstrap in a histogram - hmm the log_bmfm is really skewed over to the right..
 ```
 
 ## Question 2a: Estimate the standard error for each of your β coefficients as the standard deviation of the sampling distribution from your bootstrap and determine the 95% CI for each of your β coefficients based on the appropriate quantiles from your sampling distribution.
@@ -96,9 +104,10 @@ CI_lm<- confint(lm1, level = 0.95, type = "norm")
 CI_lm
 
 #                 2.5 %            97.5 %
-#log_hr     -6.148631e-01      3.8776092174
-#log_bmfm   -2.011861e-05      0.0002158257
+#log_hr     -0.6148631          3.8776092174
+#log_bmfm   -0.00002011861      0.0002158257
 
-#The CIs from the bootstrapping are bigger in the upper limit and smaller in the lower limit that the CIs from the original lm.  
+#The CI's are very similar, just slightly different from one other. There doesn't seem to be a clear difference between the two, as in one is clearly wider or narrower than the other. 
 ```
+
 
